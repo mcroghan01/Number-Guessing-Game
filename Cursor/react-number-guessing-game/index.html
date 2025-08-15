@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React Number Guessing Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-start: #0ea5e9; /* sky-500 */
+        --bg-end: #8b5cf6;   /* violet-500 */
+        --card-bg: rgba(255,255,255,0.12);
+        --card-border: rgba(255,255,255,0.25);
+        --text: #0b1021;
+        --text-invert: #0f172a;
+        --accent: #22c55e;
+        --accent-2: #f59e0b;
+        --danger: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        color: #0b1021;
+        display: grid;
+        place-items: center;
+        overflow-x: hidden;
+      }
+      .app-shell {
+        width: min(960px, 92vw);
+        margin: 48px auto;
+      }
+      .title {
+        text-align: center;
+        color: white;
+        text-shadow: 0 6px 28px rgba(0,0,0,0.25);
+        margin: 0 0 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .subtitle {
+        text-align: center;
+        color: rgba(255,255,255,0.9);
+        margin: 0 0 28px;
+      }
+      .card {
+        backdrop-filter: blur(10px);
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.22);
+      }
+      .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      .row + .row { margin-top: 14px; }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.18);
+        border: 1px solid rgba(255,255,255,0.28);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+
+      select, input[type="number"] {
+        appearance: none;
+        border: 1px solid rgba(255,255,255,0.35);
+        background: rgba(255,255,255,0.9);
+        color: var(--text-invert);
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: 16px;
+        outline: none;
+        min-width: 140px;
+      }
+      input[type="number"] { width: 160px; }
+
+      .button {
+        border: 0;
+        background: white;
+        color: var(--text-invert);
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+      }
+      .button:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(0,0,0,0.16); }
+      .button:active { transform: translateY(0); box-shadow: 0 8px 18px rgba(0,0,0,0.14); }
+      .button.primary { background: #ffffff; }
+      .button.success { background: #10b981; color: white; }
+      .button.reset { background: #334155; color: #e2e8f0; }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .stat-card {
+        background: rgba(255,255,255,0.16);
+        border: 1px solid rgba(255,255,255,0.28);
+        color: white;
+        border-radius: 14px;
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .bar-outer {
+        margin-top: 14px;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.35);
+        height: 12px;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar-inner {
+        height: 100%;
+        background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444);
+        width: 0%;
+        transition: width 250ms ease;
+      }
+
+      .message {
+        margin-top: 16px;
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      }
+      .history {
+        margin-top: 10px;
+        color: white;
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      .confetti {
+        position: fixed;
+        pointer-events: none;
+        inset: 0;
+        overflow: hidden;
+      }
+      .confetti > i {
+        position: absolute;
+        width: 10px; height: 14px;
+        background: var(--accent);
+        top: -20px;
+        opacity: 0.9;
+        transform: rotate(15deg);
+        animation: fall 1600ms ease-in forwards;
+      }
+      .confetti > i:nth-child(3n) { background: #f59e0b; }
+      .confetti > i:nth-child(4n) { background: #ef4444; }
+      .confetti > i:nth-child(5n) { background: #3b82f6; }
+      @keyframes fall {
+        to { transform: translateY(110vh) rotate(360deg); }
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 18px;
+        color: rgba(255,255,255,0.9);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <h1 class="title">🎯 Number Guessing – React Edition</h1>
+      <p class="subtitle">Guess the secret number with hints, stylish UI, and a dash of celebration!</p>
+      <div id="root"></div>
+      <div id="confetti" class="confetti" aria-hidden="true"></div>
+      <p class="footer">Tip: Press Enter to submit your guess</p>
+    </div>
+
+    <!-- React & Babel via CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- App Code -->
+    <script type="text/babel">
+      const { useEffect, useMemo, useRef, useState } = React;
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      const DIFFICULTIES = {
+        easy:   { label: 'Easy (1–50)',   min: 1, max: 50,  maxAttempts: 10 },
+        normal: { label: 'Normal (1–100)', min: 1, max: 100, maxAttempts: 7  },
+        hard:   { label: 'Hard (1–500)',  min: 1, max: 500, maxAttempts: 9  },
+      };
+
+      function useConfetti() {
+        const spawn = (count = 60) => {
+          const host = document.getElementById('confetti');
+          if (!host) return;
+          for (let i = 0; i < count; i++) {
+            const piece = document.createElement('i');
+            piece.style.left = Math.random() * 100 + 'vw';
+            piece.style.animationDelay = Math.random() * 400 + 'ms';
+            host.appendChild(piece);
+            setTimeout(() => piece.remove(), 1800);
+          }
+        };
+        return { spawn };
+      }
+
+      function GameCard() {
+        const [mode, setMode] = useState('normal');
+        const rules = DIFFICULTIES[mode];
+        const [secret, setSecret] = useState(() => randomInt(rules.min, rules.max));
+        const [guess, setGuess] = useState('');
+        const [attempts, setAttempts] = useState(0);
+        const [status, setStatus] = useState('playing'); // 'playing' | 'won' | 'lost'
+        const [message, setMessage] = useState('Make your first guess!');
+        const [history, setHistory] = useState([]);
+        const inputRef = useRef(null);
+        const { spawn } = useConfetti();
+
+        // Reset game when difficulty changes
+        useEffect(() => {
+          reset(false);
+        }, [mode]);
+
+        const attemptsLeft = rules.maxAttempts - attempts;
+        const progress = Math.min(100, (attempts / rules.maxAttempts) * 100);
+
+        function reset(focus = true) {
+          const newRules = DIFFICULTIES[mode];
+          setSecret(randomInt(newRules.min, newRules.max));
+          setGuess('');
+          setAttempts(0);
+          setStatus('playing');
+          setMessage('New game started. Good luck!');
+          setHistory([]);
+          if (focus) setTimeout(() => inputRef.current?.focus(), 0);
+        }
+
+        function submitGuess() {
+          if (status !== 'playing') return;
+          const value = Number(guess);
+          if (!Number.isInteger(value)) {
+            setMessage('Please enter a whole number.');
+            return;
+          }
+          if (value < rules.min || value > rules.max) {
+            setMessage(`Enter a number between ${rules.min} and ${rules.max}.`);
+            return;
+          }
+
+          const nextAttempts = attempts + 1;
+          setAttempts(nextAttempts);
+          setHistory(h => [value, ...h].slice(0, 8));
+
+          if (value === secret) {
+            setStatus('won');
+            setMessage(`🎉 You nailed it in ${nextAttempts} attempt${nextAttempts === 1 ? '' : 's'}!`);
+            spawn(80);
+            return;
+          }
+
+          if (nextAttempts >= rules.maxAttempts) {
+            setStatus('lost');
+            setMessage(`😔 Out of attempts. The number was ${secret}.`);
+            return;
+          }
+
+          if (value < secret) {
+            setMessage('📈 Too low – guess higher!');
+          } else {
+            setMessage('📉 Too high – guess lower!');
+          }
+        }
+
+        function onKey(e) {
+          if (e.key === 'Enter') submitGuess();
+        }
+
+        return (
+          <div className="card">
+            <div className="row" style={{justifyContent: 'space-between'}}>
+              <span className="pill">Mode: {DIFFICULTIES[mode].label}</span>
+              <div className="row">
+                <select value={mode} onChange={(e) => setMode(e.target.value)} aria-label="Select difficulty">
+                  {Object.entries(DIFFICULTIES).map(([key, v]) => (
+                    <option key={key} value={key}>{v.label}</option>
+                  ))}
+                </select>
+                <button className="button reset" onClick={() => reset()} aria-label="Reset game">↻ Reset</button>
+              </div>
+            </div>
+
+            <div className="row" style={{marginTop: 12}}>
+              <input
+                ref={inputRef}
+                type="number"
+                inputMode="numeric"
+                placeholder={`Enter ${rules.min}–${rules.max}`}
+                value={guess}
+                onChange={(e) => setGuess(e.target.value)}
+                onKeyDown={onKey}
+                disabled={status !== 'playing'}
+                aria-label="Your guess"
+              />
+              <button className="button primary" onClick={submitGuess} disabled={status !== 'playing'}>
+                Guess
+              </button>
+              {status === 'won' && (
+                <button className="button success" onClick={() => reset()}>
+                  Play Again 🎮
+                </button>
+              )}
+              {status === 'lost' && (
+                <button className="button reset" onClick={() => reset()}>
+                  Try Again 💪
+                </button>
+              )}
+            </div>
+
+            <div className="stats">
+              <div className="stat-card">Range: {rules.min} – {rules.max}</div>
+              <div className="stat-card">Attempts: {attempts} / {rules.maxAttempts}</div>
+              <div className="stat-card">Left: {attemptsLeft}</div>
+            </div>
+
+            <div className="bar-outer" role="progressbar" aria-valuemin={0} aria-valuemax={rules.maxAttempts} aria-valuenow={attempts}>
+              <div className="bar-inner" style={{ width: `${progress}%` }} />
+            </div>
+
+            <div className="message">{message}</div>
+            {history.length > 0 && (
+              <div className="history">Recent guesses: {history.join(', ')}</div>
+            )}
+          </div>
+        );
+      }
+
+      function App() {
+        return (
+          <React.Fragment>
+            <GameCard />
+          </React.Fragment>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
